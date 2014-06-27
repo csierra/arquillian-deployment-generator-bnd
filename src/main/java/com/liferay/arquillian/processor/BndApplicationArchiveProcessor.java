@@ -24,6 +24,7 @@ import java.util.jar.Manifest;
 import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.Node;
 import org.jboss.shrinkwrap.api.asset.ByteArrayAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
@@ -48,7 +49,19 @@ public class BndApplicationArchiveProcessor implements ApplicationArchiveProcess
 		Analyzer analyzer = new Analyzer();
 
 		try {
-			Manifest manifest = new Manifest(applicationArchive.get(MANIFEST_PATH).getAsset().openStream());
+			Node node = applicationArchive.get(MANIFEST_PATH);
+
+			if (node != null) {
+				analyzer.mergeManifest(new Manifest(node.getAsset().openStream()));
+			}
+
+			ZipExporter zipExporter = applicationArchive.as(ZipExporter.class);
+
+			Jar jar = new Jar(applicationArchive.getName(), zipExporter.exportAsInputStream());
+
+			analyzer.setJar(jar);
+
+			Manifest manifest = analyzer.calcManifest();
 
 			String exportPackage = manifest.getMainAttributes().getValue("Export-Package");
 
@@ -60,16 +73,6 @@ public class BndApplicationArchiveProcessor implements ApplicationArchiveProcess
 			}
 
 			manifest.getMainAttributes().putValue("Export-Package", exportPackage);
-
-			analyzer.mergeManifest(manifest);
-
-			ZipExporter zipExporter = applicationArchive.as(ZipExporter.class);
-
-			Jar jar = new Jar(applicationArchive.getName(), zipExporter.exportAsInputStream());
-
-			analyzer.setJar(jar);
-
-			manifest = analyzer.calcManifest();
 
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
