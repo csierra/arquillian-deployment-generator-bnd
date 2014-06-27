@@ -81,7 +81,7 @@ public class BndApplicationArchiveProcessor implements ApplicationArchiveProcess
 			replaceManifest(applicationArchive, byteArrayAsset);
 		}
 		catch (Exception e) {
-			e.printStackTrace();
+			throw new IllegalStateException(e);
 		}
 		finally {
 			analyzer.close();
