@@ -29,6 +29,5 @@ public class BndDeploymentScenarioGeneratorExtension implements LoadableExtensio
 	public void register(ExtensionBuilder builder) {
 		builder.service(DeploymentScenarioGenerator.class, BndDeploymentScenarioGenerator.class);
 		builder.override(ApplicationArchiveProcessor.class, OSGiApplicationArchiveProcessor.class, BndApplicationArchiveProcessor.class);
-		builder.service(ApplicationArchiveProcessor.class, BndApplicationArchiveProcessor.class);
 	}
 }

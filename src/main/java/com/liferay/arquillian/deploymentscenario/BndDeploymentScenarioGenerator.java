@@ -35,11 +35,15 @@ public class BndDeploymentScenarioGenerator implements DeploymentScenarioGenerat
 		ArrayList<DeploymentDescription> deployments = new ArrayList<>();
 
 		try {
-			JavaArchive javaArchive = ShrinkWrap.create(BndProjectBuilder.class).setBndFile(new File("bnd.bnd")).generateManifest(false).as(JavaArchive.class);
+			File bndFile = new File("bnd.bnd");
+
+			JavaArchive javaArchive = ShrinkWrap.create(BndProjectBuilder.class).setBndFile(bndFile).generateManifest(false).as(JavaArchive.class);
+
+			javaArchive.addAsResource(bndFile, "##original_bnd_file##");
 
 			DeploymentDescription deploymentDescription = new DeploymentDescription(javaArchive.getName(), javaArchive);
 
-			deploymentDescription.shouldBeTestable(true);
+			deploymentDescription.shouldBeTestable(true).shouldBeManaged(true);
 
 			deployments.add(deploymentDescription);
 

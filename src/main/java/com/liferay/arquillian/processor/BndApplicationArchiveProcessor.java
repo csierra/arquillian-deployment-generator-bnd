@@ -51,17 +51,11 @@ public class BndApplicationArchiveProcessor implements ApplicationArchiveProcess
 		try {
 			Node node = applicationArchive.get(MANIFEST_PATH);
 
-			if (node != null) {
-				analyzer.mergeManifest(new Manifest(node.getAsset().openStream()));
+			if (node == null) {
+				node = applicationArchive.delete("##original_bnd_file##");
 			}
 
-			ZipExporter zipExporter = applicationArchive.as(ZipExporter.class);
-
-			Jar jar = new Jar(applicationArchive.getName(), zipExporter.exportAsInputStream());
-
-			analyzer.setJar(jar);
-
-			Manifest manifest = analyzer.calcManifest();
+			Manifest manifest = new Manifest(node.getAsset().openStream());
 
 			String exportPackage = manifest.getMainAttributes().getValue("Export-Package");
 
@@ -74,7 +68,19 @@ public class BndApplicationArchiveProcessor implements ApplicationArchiveProcess
 
 			manifest.getMainAttributes().putValue("Export-Package", exportPackage);
 
+			analyzer.mergeManifest(manifest);
+
+			ZipExporter zipExporter = applicationArchive.as(ZipExporter.class);
+
+			Jar jar = new Jar(applicationArchive.getName(), zipExporter.exportAsInputStream());
+
+			analyzer.setJar(jar);
+
+			manifest = analyzer.calcManifest();
+
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+			manifest.getMainAttributes().putValue("Bundle-SymbolicName", javaArchive.getName());
 
 			manifest.write(baos);
 
