@@ -19,6 +19,8 @@ import aQute.bnd.osgi.Jar;
 
 import java.io.ByteArrayOutputStream;
 
+import java.io.File;
+import java.util.Properties;
 import java.util.jar.Manifest;
 
 import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
@@ -49,26 +51,32 @@ public class BndApplicationArchiveProcessor implements ApplicationArchiveProcess
 		Analyzer analyzer = new Analyzer();
 
 		try {
-			Node node = applicationArchive.get(MANIFEST_PATH);
+			Node originalBndNode = applicationArchive.delete("##original_bnd_file##");
 
-			if (node == null) {
-				node = applicationArchive.delete("##original_bnd_file##");
+			Properties properties = new Properties();
+
+			if (originalBndNode != null) {
+				properties.load(originalBndNode.getAsset().openStream());
 			}
 
-			Manifest manifest = new Manifest(node.getAsset().openStream());
+			analyzer.setProperties(properties);
 
-			String exportPackage = manifest.getMainAttributes().getValue("Export-Package");
+			Node manifestNode = applicationArchive.get(MANIFEST_PATH);
 
-			if (exportPackage == null || exportPackage.isEmpty()) {
+			if (manifestNode != null) {
+				analyzer.mergeManifest(new Manifest(manifestNode.getAsset().openStream()));
+			}
+
+			String exportPackage = analyzer.getProperty("Export-Package");
+
+			if ((exportPackage == null) || exportPackage.isEmpty()) {
 				exportPackage = testClass.getJavaClass().getPackage().getName();
 			}
 			else {
 				exportPackage += "," + testClass.getJavaClass().getPackage().getName();
 			}
 
-			manifest.getMainAttributes().putValue("Export-Package", exportPackage);
-
-			analyzer.mergeManifest(manifest);
+			analyzer.setProperty("Export-Package", exportPackage);
 
 			ZipExporter zipExporter = applicationArchive.as(ZipExporter.class);
 
@@ -76,11 +84,9 @@ public class BndApplicationArchiveProcessor implements ApplicationArchiveProcess
 
 			analyzer.setJar(jar);
 
-			manifest = analyzer.calcManifest();
+			Manifest manifest = analyzer.calcManifest();
 
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-			manifest.getMainAttributes().putValue("Bundle-SymbolicName", javaArchive.getName());
 
 			manifest.write(baos);
 
