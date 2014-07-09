@@ -17,7 +17,11 @@ package com.liferay.arquillian.deploymentscenario;
 import aQute.bnd.osgi.Analyzer;
 import aQute.bnd.osgi.Jar;
 import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescription;
+import org.jboss.arquillian.container.test.impl.client.deployment.AnnotationDeploymentScenarioGenerator;
 import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentScenarioGenerator;
+import org.jboss.arquillian.core.api.Injector;
+import org.jboss.arquillian.core.api.Instance;
+import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -37,6 +41,9 @@ import java.util.jar.Manifest;
  */
 public class BndDeploymentScenarioGenerator implements DeploymentScenarioGenerator {
 
+    @Inject
+    Instance<Injector> injector;
+
     public static final String MANIFEST_PATH = "META-INF/MANIFEST.MF";
 
     private File bndFile = new File("bnd.bnd");
@@ -52,6 +59,16 @@ public class BndDeploymentScenarioGenerator implements DeploymentScenarioGenerat
     @Override
 	public List<DeploymentDescription> generate(TestClass testClass) {
 		ArrayList<DeploymentDescription> deployments = new ArrayList<>();
+
+        DeploymentScenarioGenerator defaultDeploymentScenarioGenerator = getDefaultDeploymentScenarioGenerator();
+
+        if (defaultDeploymentScenarioGenerator != null) {
+            List<DeploymentDescription> annotationDeployments = defaultDeploymentScenarioGenerator.generate(testClass);
+
+            if (annotationDeployments != null && !annotationDeployments.isEmpty()) {
+                return annotationDeployments;
+            }
+        }
 
         try {
             bndFile = getBndFile();
@@ -96,6 +113,13 @@ public class BndDeploymentScenarioGenerator implements DeploymentScenarioGenerat
 		}
 
 	}
+
+    protected DeploymentScenarioGenerator getDefaultDeploymentScenarioGenerator() {
+        //FIXME: is there a way to request a specific service, not an interface?
+        AnnotationDeploymentScenarioGenerator annotationDeploymentScenarioGenerator = new AnnotationDeploymentScenarioGenerator();
+        annotationDeploymentScenarioGenerator = injector.get().inject(annotationDeploymentScenarioGenerator);
+        return annotationDeploymentScenarioGenerator;
+    }
 
     private void fixExportPackage(TestClass testClass, Analyzer analyzer) {
         String exportPackage = analyzer.getProperty("Export-Package");
