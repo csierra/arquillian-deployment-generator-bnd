@@ -14,7 +14,7 @@
 
 package com.liferay.arquillian.deploymentscenario;
 
-import com.liferay.arquillian.processor.BndApplicationArchiveProcessor;
+import com.liferay.arquillian.processor.NoOpArchiveApplicationProcessor;
 import org.jboss.arquillian.container.osgi.OSGiApplicationArchiveProcessor;
 import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
 import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentScenarioGenerator;
@@ -28,6 +28,6 @@ public class BndDeploymentScenarioGeneratorExtension implements LoadableExtensio
 	@Override
 	public void register(ExtensionBuilder builder) {
 		builder.service(DeploymentScenarioGenerator.class, BndDeploymentScenarioGenerator.class);
-		builder.override(ApplicationArchiveProcessor.class, OSGiApplicationArchiveProcessor.class, BndApplicationArchiveProcessor.class);
+        builder.override(ApplicationArchiveProcessor.class, OSGiApplicationArchiveProcessor.class, NoOpArchiveApplicationProcessor.class);
 	}
 }
